@@ -1,0 +1,50 @@
+name: Firmware CI
+
+# Build canónico del firmware en runner x86_64 (Ubuntu) — independiente de la
+# arquitectura desde la que se edite (MacBook aarch64 o desktop x86_64).
+# Ver firefly-imu-carrier-design-brief.md §11.
+
+on:
+  push:
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/firmware-ci.yml'
+  pull_request:
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/firmware-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Build firmware
+        run: pio run -d firmware
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefly-imu-firmware-${{ github.sha }}
+          path: |
+            firmware/.pio/build/*/firmware.hex
+            firmware/.pio/build/*/firmware.zip
+          if-no-files-found: warn
