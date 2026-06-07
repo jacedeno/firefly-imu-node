@@ -1,12 +1,12 @@
 // Firefly Blue Ghost IMU — carrier firmware (SCAFFOLD / compile-check)
 //
-// Propósito de este archivo: validar que el toolchain Adafruit nRF52 + las
-// librerías de sensores + Bluefruit BLE compilan en CI (x86_64). La lógica
-// real de fusión y el paquete BLE de 20 bytes se portan luego desde el
-// sensor_fusion.h existente — ver firefly-imu-carrier-design-brief.md §11.
+// Purpose of this file: verify that the Adafruit nRF52 toolchain + the sensor
+// libraries + Bluefruit BLE compile in CI (x86_64). The real fusion logic and
+// the 20-byte BLE packet are ported later from the existing sensor_fusion.h —
+// see firefly-imu-carrier-design-brief.md §11.
 //
 //   U1: XIAO nRF52840 Sense Plus  (onboard LSM6DS3TR-C accel+gyro @ 0x6A)
-//   U2: LIS3MDL magnetómetro externo @ 0x1C  (I2C user bus: D4=SDA, D5=SCL)
+//   U2: external LIS3MDL magnetometer @ 0x1C  (user I2C bus: D4=SDA, D5=SCL)
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -21,7 +21,7 @@ void setup() {
   Serial.begin(115200);
 
 #ifdef PIN_LSM6DS3TR_C_POWER
-  // El IMU onboard se alimenta por P1.08 en el Sense; ponerlo en alto.
+  // The onboard IMU is powered via P1.08 on the Sense; drive it high.
   pinMode(PIN_LSM6DS3TR_C_POWER, OUTPUT);
   digitalWrite(PIN_LSM6DS3TR_C_POWER, HIGH);
   delay(50);
@@ -31,7 +31,7 @@ void setup() {
   imu.begin_I2C(0x6A);   // LSM6DS3TR-C
   mag.begin_I2C(0x1C);   // LIS3MDL (CS->VDD_IO, SA1->GND)
 
-  // BLE: conservar UUIDs/paquete existentes al portar la lógica real (§11).
+  // BLE: keep the existing UUIDs/packet when porting the real logic (§11).
   Bluefruit.begin();
   Bluefruit.setName("Firefly-IMU");
   Bluefruit.Advertising.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
@@ -45,6 +45,6 @@ void loop() {
   imu.getEvent(&accel, &gyro, &temp);
   mag.getEvent(&magfield);
 
-  // TODO: fusión Madgwick 9-DOF -> cuaternión -> BLE GATT notify (20 bytes).
+  // TODO: 9-DOF Madgwick fusion -> quaternion -> BLE GATT notify (20 bytes).
   delay(20);
 }

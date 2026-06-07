@@ -15,17 +15,17 @@ AI-assisted EDA project using @claude-eda toolkit.
 
 ## Component Libraries
 
-**Este proyecto usa librerías PROJECT-LOCAL versionadas en git** (decisión por el
-flujo de dos máquinas: MacBook aarch64 + desktop x86_64 — las libs viajan con el repo).
+**This project uses PROJECT-LOCAL libraries tracked in git** (decision driven by the
+two-machine flow: MacBook aarch64 + desktop x86_64 — the libs travel with the repo).
 
-- `lib/footprints/Seeed_XIAO.pretty/` — footprint del XIAO nRF52840 Plus-SMD (U1)
-- `lib/symbols/Seeed_Studio_XIAO_Series.kicad_sym` — símbolo (usar `XIAO-nRF52840_Plus_SMD`)
-- `fp-lib-table` / `sym-lib-table` — enganchan lo anterior vía `${KIPRJMOD}`
-- `lib/README.md` — mapeo de pines y nota crítica del pad BAT (VBAT pad 32 = potencia)
+- `lib/footprints/Seeed_XIAO.pretty/` — XIAO nRF52840 Plus-SMD footprint (U1)
+- `lib/symbols/Seeed_Studio_XIAO_Series.kicad_sym` — symbol (use `XIAO-nRF52840_Plus_SMD`)
+- `fp-lib-table` / `sym-lib-table` — hook the above via `${KIPRJMOD}`
+- `lib/README.md` — pin mapping and the critical BAT pad note (VBAT pad 32 = power)
 
-KiCad es 10.0.3 (no 9.0). Al sourcing de piezas genéricas (R/C/conector) el kicad-mcp
-puede traerlas; los símbolos/footprints que se reusen deben quedar **dentro de `lib/`**
-para que viajen en git, no en la librería global `~/Documents/KiCad/...`.
+KiCad is 10.0.3 (not 9.0). When sourcing generic parts (R/C/connector) the kicad-mcp
+can fetch them; any reused symbols/footprints must live **inside `lib/`** so they
+travel in git, not in the global library at `~/Documents/KiCad/...`.
 
 ## EDA Workflow
 

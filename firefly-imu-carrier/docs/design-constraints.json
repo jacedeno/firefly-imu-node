@@ -2,29 +2,29 @@
   "project": {
     "name": "firefly-imu-carrier",
     "version": "0.1.0",
-    "description": "Carrier PCB de 2 capas para el XIAO nRF52840 Sense Plus: anade magnetometro LIS3MDL (9-DOF) + entrada LiPo swappable (JST-PH) con proteccion de polaridad inversa. Ver firefly-imu-carrier-design-brief.md"
+    "description": "2-layer carrier PCB for the XIAO nRF52840 Sense Plus: adds a LIS3MDL magnetometer (9-DOF) + swappable LiPo input (JST-PH) with reverse-polarity protection. See firefly-imu-carrier-design-brief.md"
   },
   "power": {
     "input": {
-      "type": "LiPo 1S via JST-PH 2.0mm; carga USB-C por BQ25101 onboard del XIAO",
+      "type": "LiPo 1S via JST-PH 2.0mm; USB-C charging through the XIAO onboard BQ25101",
       "voltage": {
         "min": 3.0,
         "max": 4.2
       },
-      "protection": "P-FET high-side logic-level (DMG2305UX / AO3401), reverse-polarity, antes del pad BAT"
+      "protection": "High-side logic-level P-FET (DMG2305UX / AO3401), reverse-polarity, before the BAT pad"
     },
     "rails": [
       {
         "name": "3V3",
         "voltage_v": 3.3,
-        "source": "LDO interno del XIAO (pin 3V3)",
+        "source": "XIAO internal LDO (3V3 pin)",
         "loads": ["LIS3MDL VDD/VDD_IO", "I2C pull-ups R2/R3", "decoupling C1/C2"]
       },
       {
         "name": "BAT",
         "voltage_v": 3.7,
-        "source": "LiPo / BQ25101 (nodo bidireccional)",
-        "loads": ["sistema XIAO"]
+        "source": "LiPo / BQ25101 (bidirectional node)",
+        "loads": ["XIAO system"]
       }
     ]
   },
@@ -32,7 +32,7 @@
     "size": {
       "width_mm": 30,
       "height_mm": 22,
-      "note": "Preliminar: modulo XIAO 21x17.5mm + espacio para JST/Q1/pasivos. Confirmar en layout."
+      "note": "Preliminary: XIAO module 21x17.5mm + room for JST/Q1/passives. Confirm during layout."
     },
     "layers": 2,
     "thickness_mm": 1.6,
@@ -46,35 +46,35 @@
   "interfaces": [
     {
       "type": "I2C",
-      "role": "bus de sensores (user I2C)",
+      "role": "sensor bus (user I2C)",
       "devices": ["LIS3MDL @ 0x1C (SA1->GND)"],
       "pins": {"sda": "D4 / P0.04", "scl": "D5 / P0.05"},
-      "pullups": "4.7k a 3V3 (R2/R3)"
+      "pullups": "4.7k to 3V3 (R2/R3)"
     },
     {
       "type": "GPIO",
-      "role": "interrupcion magnetometro",
+      "role": "magnetometer interrupt",
       "pins": {"mag_int": "D2 / P0.28 -> LIS3MDL DRDY/INT"}
     },
     {
       "type": "BLE",
-      "role": "telemetria",
-      "detail": "nRF52840 BLE 5.4; GATT custom; notify de 20 bytes (10x int16). Mantener UUIDs/paquete existentes."
+      "role": "telemetry",
+      "detail": "nRF52840 BLE 5.4; custom GATT; 20-byte notify (10x int16). Keep the existing UUIDs/packet."
     },
     {
       "type": "USB-C",
-      "role": "carga + programacion",
+      "role": "charging + programming",
       "detail": "onboard XIAO (BQ25101 charger)"
     },
     {
       "type": "battery",
-      "role": "entrada de energia swappable",
+      "role": "swappable power input",
       "connector": "JST-PH 2.0mm, 2-pin",
-      "notes": "Silkscreen polaridad +/- sin ambiguedad. Pad de potencia = VBAT (pad 32 del Plus), NO el GPIO P0.31_D16_BAT (pad 20, solo sense ADC)."
+      "notes": "Silkscreen +/- polarity unambiguously. Power pad = VBAT (Plus pad 32), NOT the GPIO P0.31_D16_BAT (pad 20, ADC sense only)."
     }
   ],
   "components_added": [
-    {"ref": "U1", "part": "Seeed XIAO nRF52840 Sense Plus (102010694)", "package": "Modulo SMD 21x17.5mm"},
+    {"ref": "U1", "part": "Seeed XIAO nRF52840 Sense Plus (102010694)", "package": "SMD module 21x17.5mm"},
     {"ref": "U2", "part": "ST LIS3MDL", "package": "LGA-12"},
     {"ref": "Q1", "part": "DMG2305UX (alt AO3401)", "package": "SOT-23"},
     {"ref": "J1", "part": "JST-PH 2.0mm 2-pin", "package": "THT/SMD"},
@@ -84,11 +84,11 @@
     {"ref": "C3", "part": "4.7-10uF", "package": "0805"}
   ],
   "layout_constraints": {
-    "antenna_keepout": "Sin cobre/plano bajo el borde de antena del XIAO (prioridad #1 para alcance BLE).",
-    "magnetometer_isolation": "U2 en la esquina mas lejana de antena, bateria, trazas de carga, USB-C e inductores.",
-    "decoupling": "C1/C2 a <2mm de U2; pull-ups cerca del bus.",
-    "i2c": "SDA/SCL corto y directo, lejos del camino de bateria.",
-    "access": "USB-C y boton reset accesibles; exponer pads SWD si es practico."
+    "antenna_keepout": "No copper/plane under the XIAO antenna edge (priority #1 for BLE range).",
+    "magnetometer_isolation": "Place U2 in the corner farthest from antenna, battery, charge traces, USB-C and inductors.",
+    "decoupling": "C1/C2 within <2mm of U2; pull-ups near the bus.",
+    "i2c": "Short, direct SDA/SCL, away from the battery path.",
+    "access": "USB-C and reset button reachable; expose SWD pads if practical."
   },
   "manufacturing": {
     "fab_options": ["JLCPCB", "PCBWay"],
@@ -98,6 +98,6 @@
   "environment": {
     "temp_min_c": 0,
     "temp_max_c": 40,
-    "use_case": "Demo de escritorio en interior"
+    "use_case": "Indoor desk demo"
   }
 }
