@@ -1,0 +1,86 @@
+{
+  "_status": "PRELIMINAR - generado sin JLC MCP. Confirmar stock/precio y LCSC de pasivos/conector via /eda-source.",
+  "project": "firefly-imu-carrier",
+  "version": "0.1.0",
+  "components": [
+    {
+      "ref": "U1",
+      "role": "MCU module",
+      "mpn": "Seeed XIAO nRF52840 Sense Plus (102010694)",
+      "lcsc": null,
+      "package": "Module SMD 21x17.5mm",
+      "source": "module (hand/reflow place, not JLC PCBA)",
+      "symbol": "Seeed_XIAO:XIAO-nRF52840_Plus_SMD",
+      "footprint": "Seeed_XIAO:XIAO-nRF52840-Plus-SMD",
+      "verified": "footprint local OK"
+    },
+    {
+      "ref": "U2",
+      "role": "magnetometer",
+      "mpn": "LIS3MDLTR",
+      "manufacturer": "STMicroelectronics",
+      "lcsc": "C478483",
+      "package": "LGA-12",
+      "config": "I2C 0x1C (CS->VDD_IO, SA1->GND)",
+      "datasheet": "https://www.st.com/resource/en/datasheet/lis3mdl.pdf",
+      "verified": "LCSC verificado por web; stock/precio por confirmar"
+    },
+    {
+      "ref": "Q1",
+      "role": "reverse-polarity P-FET",
+      "options": [
+        {"mpn": "DMG2305UX-13", "manufacturer": "Diodes Inc", "lcsc": "C144153", "jlc": "Extended", "vds_v": -20, "preferred": true},
+        {"mpn": "AO3401A", "manufacturer": "AOS", "lcsc": "C15127", "jlc": "Basic", "vds_v": -30, "preferred": false}
+      ],
+      "package": "SOT-23",
+      "connection": "S->VBAT(module), D->J1(+), G->GND",
+      "verified": "LCSC verificado por web; elegir A o B"
+    },
+    {
+      "ref": "J1",
+      "role": "battery connector",
+      "mpn": "JST-PH 2.0mm 2-pin",
+      "lcsc": null,
+      "package": "PH2.0 2P (THT preferido)",
+      "verified": "LCSC por confirmar (clones varios)"
+    },
+    {
+      "ref": "R1",
+      "role": "Q1 gate-source",
+      "value": "100k",
+      "tolerance": "1%",
+      "package": "0402",
+      "lcsc": "C25741",
+      "verified": "candidato; confirmar"
+    },
+    {
+      "ref": "R2,R3",
+      "role": "I2C pull-ups",
+      "value": "4.7k",
+      "tolerance": "1%",
+      "package": "0402",
+      "lcsc": "C25900",
+      "qty": 2,
+      "verified": "candidato; confirmar"
+    },
+    {
+      "ref": "C1,C2",
+      "role": "LIS3MDL decoupling",
+      "value": "100nF",
+      "spec": "X7R 50V",
+      "package": "0402",
+      "lcsc": "C1525",
+      "qty": 2,
+      "verified": "candidato; confirmar"
+    },
+    {
+      "ref": "C3",
+      "role": "battery bulk",
+      "value": "10uF",
+      "spec": "X5R 25V",
+      "package": "0805",
+      "lcsc": "C15850",
+      "verified": "candidato; confirmar"
+    }
+  ]
+}
