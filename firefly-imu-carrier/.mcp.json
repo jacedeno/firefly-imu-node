@@ -19,6 +19,10 @@
     },
     "kicad-sch": {
       "command": "/home/geekendzone/.claude-eda/kicad-sch-venv/bin/kicad-sch-mcp"
+    },
+    "pcbparts": {
+      "type": "http",
+      "url": "https://pcbparts.dev/mcp"
     }
   }
 }
