@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "jlc": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@jlcpcb/mcp@latest"
+      ],
+      "env": {
+        "JLC_CACHE_DIR": "./.cache/jlc",
+        "EASYEDA_OUTPUT_DIR": "./libraries"
+      }
+    },
+    "kicad-pcb": {
+      "command": "node",
+      "args": [
+        "/home/geekendzone/.claude-eda/kicad-mcp/dist/index.js"
+      ]
+    },
+    "kicad-sch": {
+      "command": "/home/geekendzone/.claude-eda/kicad-sch-venv/bin/kicad-sch-mcp"
+    }
+  }
+}

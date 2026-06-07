@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+
+# Cache
+.cache/
+
+# KiCad backup files
+*-backups/
+*.bak
+*~
+*.lck
+fp-info-cache
+
+# Production files (keep originals, ignore copies)
+production/*.zip
+
+# Environment
+.env
+.env.local
