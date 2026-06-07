@@ -1,5 +1,5 @@
 {
-  "_status": "PRELIMINAR - generado sin JLC MCP. Confirmar stock/precio y LCSC de pasivos/conector via /eda-source.",
+  "_status": "PRELIMINARY - generated without the JLC MCP. Confirm stock/price and passive/connector LCSC via /eda:source.",
   "project": "firefly-imu-carrier",
   "version": "0.1.0",
   "components": [
@@ -12,7 +12,7 @@
       "source": "module (hand/reflow place, not JLC PCBA)",
       "symbol": "Seeed_XIAO:XIAO-nRF52840_Plus_SMD",
       "footprint": "Seeed_XIAO:XIAO-nRF52840-Plus-SMD",
-      "verified": "footprint local OK"
+      "verified": "local footprint OK"
     },
     {
       "ref": "U2",
@@ -23,7 +23,7 @@
       "package": "LGA-12",
       "config": "I2C 0x1C (CS->VDD_IO, SA1->GND)",
       "datasheet": "https://www.st.com/resource/en/datasheet/lis3mdl.pdf",
-      "verified": "LCSC verificado por web; stock/precio por confirmar"
+      "verified": "LCSC web-verified; stock/price to confirm"
     },
     {
       "ref": "Q1",
@@ -34,15 +34,15 @@
       ],
       "package": "SOT-23",
       "connection": "S->VBAT(module), D->J1(+), G->GND",
-      "verified": "LCSC verificado por web; elegir A o B"
+      "verified": "LCSC web-verified; choose A or B"
     },
     {
       "ref": "J1",
       "role": "battery connector",
       "mpn": "JST-PH 2.0mm 2-pin",
       "lcsc": null,
-      "package": "PH2.0 2P (THT preferido)",
-      "verified": "LCSC por confirmar (clones varios)"
+      "package": "PH2.0 2P (THT preferred)",
+      "verified": "LCSC to confirm (multiple clones)"
     },
     {
       "ref": "R1",
@@ -51,7 +51,7 @@
       "tolerance": "1%",
       "package": "0402",
       "lcsc": "C25741",
-      "verified": "candidato; confirmar"
+      "verified": "candidate; confirm"
     },
     {
       "ref": "R2,R3",
@@ -61,7 +61,7 @@
       "package": "0402",
       "lcsc": "C25900",
       "qty": 2,
-      "verified": "candidato; confirmar"
+      "verified": "candidate; confirm"
     },
     {
       "ref": "C1,C2",
@@ -71,7 +71,7 @@
       "package": "0402",
       "lcsc": "C1525",
       "qty": 2,
-      "verified": "candidato; confirmar"
+      "verified": "candidate; confirm"
     },
     {
       "ref": "C3",
@@ -80,7 +80,7 @@
       "spec": "X5R 25V",
       "package": "0805",
       "lcsc": "C15850",
-      "verified": "candidato; confirmar"
+      "verified": "candidate; confirm"
     }
   ]
 }

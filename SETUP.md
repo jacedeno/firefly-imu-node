@@ -1,87 +1,88 @@
-# Setup & entorno — firefly-imu-node
+# Setup & environment — firefly-imu-node
 
-Guía de onboarding para trabajar este repo desde **cualquiera de las dos máquinas**.
-Complementa `firefly-imu-carrier-design-brief.md` (el *qué*) y `WORKFLOW.md` (el *cómo* de diseño PCB).
+Onboarding guide for working on this repo from **either machine**.
+Complements `firefly-imu-carrier-design-brief.md` (the *what*) and `WORKFLOW.md` (the *how* of PCB design).
 
-## Máquinas
+## Machines
 
-| Máquina | Arch | OS | Rol |
+| Machine | Arch | OS | Role |
 |---|---|---|---|
-| **MacBook Air M1** | aarch64 | Fedora 44 (Asahi) | Primaria/móvil: diseño KiCad, edición firmware, git |
-| **Desktop PC** | x86_64 | Fedora 44 | En casa: compilar firmware, flashear, probar hardware real |
+| **MacBook Air M1** | aarch64 | Fedora 44 (Asahi) | Primary/mobile: KiCad design, firmware editing, git |
+| **Desktop PC** | x86_64 | Fedora 44 | At home: compile firmware, flash, test real hardware |
 
-**Por qué el split:** el toolchain nRF52 en ARM tiene fricción (el fallo mbed/GCC arm64 del brief §11).
-Regla: **diseño/edición en cualquiera; compilar/flashear/probar en el desktop x86_64.**
-La build canónica es **GitHub Actions (runner x86_64)** → independiente de dónde edites.
+**Why the split:** the nRF52 toolchain has friction on ARM (the mbed/GCC arm64 failure from brief §11).
+Rule: **design/edit on either; compile/flash/test on the x86_64 desktop.**
+The canonical build is **GitHub Actions (x86_64 runner)** → independent of where you edit.
 
 ---
 
-## Qué va en git vs qué es por-máquina
+## What lives in git vs what is per-machine
 
-**En git (viaja entre máquinas con `git pull`):**
+**In git (travels between machines with `git pull`):**
 - Firmware (`firmware/`), CI (`.github/`)
-- Proyecto KiCad y **librerías project-local** (`firefly-imu-carrier/lib/`, `fp-lib-table`, `sym-lib-table`)
-- Comandos/skills/agentes EDA (`firefly-imu-carrier/.claude/`)
-- Docs (brief, WORKFLOW, este SETUP, `docs/`)
+- KiCad project and **project-local libraries** (`firefly-imu-carrier/lib/`, `fp-lib-table`, `sym-lib-table`)
+- EDA commands/skills/agents (`firefly-imu-carrier/.claude/`)
+- Docs (brief, WORKFLOW, this SETUP, `docs/`)
 
-**Por-máquina (NO en git — instalar en cada equipo):**
-- El stack `~/.claude-eda` (kicad-mcp, venv del schematic MCP)
-- Toolchains de PlatformIO (`~/.platformio`)
-- Pertenencia al grupo `dialout` (flasheo serial)
-
----
-
-## Setup por máquina (correr una vez en cada equipo)
-
-### 1. Firmware (ambas máquinas; flasheo solo en desktop)
-```bash
-pip install --upgrade platformio        # si no está
-cd firmware && pio run                   # compila (1ª vez baja toolchain)
-# Solo desktop x86_64: pio run -t upload   (placa conectada por USB-C)
-```
-- Estar en el grupo `dialout`: `sudo usermod -aG dialout $USER` (re-login).
-- Board id: `xiaoblesense_adafruit` vía el **fork de maxgerhardt** (el platform oficial no trae el XIAO). Ya está en `firmware/platformio.ini`.
-
-### 2. Stack EDA / KiCad (ambas máquinas)
-```bash
-claude-eda doctor                        # diagnóstico
-claude-eda kicad-mcp --install           # MCP de PCB (si falta)
-claude-eda kicad-sch-mcp --install       # MCP de esquemático (si falta)
-```
-- KiCad 10.0.3. `pcbnew` se importa desde `/usr/bin/python3.14` (no el python de PlatformIO).
-
-### 3. Dashboard Web Bluetooth
-- Usar **Brave/Chromium** (Firefox NO soporta Web Bluetooth). En Brave: habilitar
-  *Web Bluetooth API* en `brave://flags`.
+**Per-machine (NOT in git — install on each machine):**
+- The `~/.claude-eda` stack (kicad-mcp, schematic MCP venv)
+- PlatformIO toolchains (`~/.platformio`)
+- `dialout` group membership (serial flashing)
 
 ---
 
-## Gotchas del stack claude-eda (descubiertos en el setup)
+## Per-machine setup (run once on each machine)
 
-1. **`claude-eda update` está roto** ("Could not find templates directory"). Por eso
-   `init` dejó `.claude/commands|agents|skills` vacíos. Ya se copiaron a mano al proyecto
-   (y están en git), así que en el desktop llegan con `git pull` — no hay que re-copiarlos.
-   - Fuente de los templates: `~/repos/claude-eda/templates/claude/`.
-2. **Invocación de comandos:** son `/eda:source`, `/eda:schematic`, etc. (**dos puntos**,
-   namespace por la carpeta `commands/eda/`), NO `/eda-source` aunque el CLAUDE.md lo diga.
-3. **Los MCP de KiCad cargan solo desde el subdir.** `jlc`, `kicad-pcb` y `kicad-sch`
-   están en `firefly-imu-carrier/.mcp.json`. Para usarlos:
+### 1. Firmware (both machines; flashing only on the desktop)
+```bash
+pip install --upgrade platformio        # if missing
+cd firmware && pio run                    # build (first run downloads the toolchain)
+# Desktop x86_64 only: pio run -t upload    (board connected over USB-C)
+```
+- Be in the `dialout` group: `sudo usermod -aG dialout $USER` (re-login).
+- Board id: `xiaoblesense_adafruit` via the **maxgerhardt fork** (the official platform lacks the XIAO). Already set in `firmware/platformio.ini`.
+
+### 2. EDA / KiCad stack (both machines)
+```bash
+claude-eda doctor                        # diagnostics
+claude-eda kicad-mcp --install           # PCB MCP (if missing)
+claude-eda kicad-sch-mcp --install       # schematic MCP (if missing)
+```
+- KiCad 10.0.3. `pcbnew` is imported from `/usr/bin/python3.14` (not the PlatformIO python).
+
+### 3. Web Bluetooth dashboard
+- Use **Brave/Chromium** (Firefox does NOT support Web Bluetooth). In Brave: enable
+  *Web Bluetooth API* in `brave://flags`.
+
+---
+
+## claude-eda stack gotchas (found during setup)
+
+1. **`claude-eda update` is broken** ("Could not find templates directory"). That's why
+   `init` left `.claude/commands|agents|skills` empty. They were copied in by hand (and are
+   in git), so on the desktop they arrive with `git pull` — no need to re-copy.
+   - Source of the templates: `~/repos/claude-eda/templates/claude/`.
+2. **Command invocation:** they are `/eda:source`, `/eda:schematic`, etc. (**colon**,
+   namespaced by the `commands/eda/` folder), NOT `/eda-source` even though CLAUDE.md says so.
+3. **The KiCad MCPs only load from the subdir.** `jlc`, `kicad-pcb`, `kicad-sch` and
+   `pcbparts` live in `firefly-imu-carrier/.mcp.json`. To use them:
    ```bash
    cd firefly-imu-carrier && claude
    ```
-   Desde la raíz del repo NO están disponibles.
-4. **`.mcp.json` usa rutas absolutas** a `/home/geekendzone/.claude-eda/...` — válido si
-   el desktop usa el mismo usuario/home (`geekendzone`). Si difiere, ajustarlas.
+   From the repo root they are NOT available.
+4. **`.mcp.json` uses absolute paths** to `/home/geekendzone/.claude-eda/...` — valid if the
+   desktop uses the same user/home (`geekendzone`). If it differs, adjust them.
 
 ---
 
-## Estado del proyecto y siguiente paso
+## Project status and next step
 
-- ✅ Firmware scaffold + CI verde (`main`)
-- ✅ Proyecto KiCad init + constraints (`firefly-imu-carrier/docs/design-constraints.json`)
-- ✅ Librerías project-local (XIAO Plus) + comandos/skills EDA instalados
-- ✅ Sourcing **PRELIMINAR** (`docs/component-selections.md`, `docs/bom-draft.json`)
-- ⏭️ **Siguiente:** `cd firefly-imu-carrier && claude` → `/eda:source` (fetch real de stock +
-  símbolos/footprints KiCad a `lib/`), luego `/eda:schematic` (dibuja desde brief §5).
+- ✅ Firmware scaffold + green CI (`main`)
+- ✅ KiCad project init + constraints (`firefly-imu-carrier/docs/design-constraints.json`)
+- ✅ Project-local libraries (XIAO Plus) + EDA commands/skills installed
+- ✅ **Preliminary** sourcing (`docs/component-selections.md`, `docs/bom-draft.json`)
+- ✅ Breadboard prototype BOM + pinout (`docs/breadboard-prototype.md`)
+- ⏭️ **Next:** `cd firefly-imu-carrier && claude` → `/eda:source` (real fetch of stock +
+  KiCad symbols/footprints into `lib/`), then `/eda:schematic` (draws from brief §5).
 
-Detalle de pines del XIAO y la nota crítica del pad BAT: `firefly-imu-carrier/lib/README.md`.
+XIAO pin details and the critical BAT pad note: `firefly-imu-carrier/lib/README.md`.
