@@ -1,191 +1,191 @@
-# Firefly IMU Carrier — Workflow de diseño (Flux.ai ⇄ stack KiCad)
+# Firefly IMU Carrier — Design workflow (Flux.ai ⇄ KiCad stack)
 
-> Guía operativa para llevar el **carrier del Firefly Blue Ghost IMU** de la idea a
-> los archivos de fabricación, comparando **Flux.ai (Copilot)** contra el
-> **stack KiCad** (`kicad-pcb-stack`). Complementa `firefly-imu-carrier-design-brief.md`
-> (ese es el *qué* se diseña; esto es el *cómo* se trabaja).
+> Operational guide to take the **Firefly Blue Ghost IMU carrier** from idea to
+> manufacturing files, comparing **Flux.ai (Copilot)** against the
+> **KiCad stack** (`kicad-pcb-stack`). Complements `firefly-imu-carrier-design-brief.md`
+> (that is the *what* gets designed; this is the *how* you work).
 >
-> Pensado para alguien nuevo en diseño de PCB. Léelo una vez de corrido; luego
-> úsalo como referencia por fase.
+> Written for someone new to PCB design. Read it through once; then use it as a
+> per-phase reference.
 
 ---
 
-## 0. La idea en 30 segundos
+## 0. The idea in 30 seconds
 
-- Vas a hacer **el mismo carrier en dos herramientas a la vez** para comparar:
-  - **Flux.ai** — EDA en la nube con copiloto AI; rápido para explorar.
-  - **stack KiCad** — nuestras 6 fases con validación rigurosa y salida a fábrica.
-- **KiCad es tu "fuente de verdad"** (lo dice tu brief), y archivas en **Forgejo**.
-- **KiCad es el editor; Claude es el asistente.** Claude edita los archivos por
-  debajo y tú abres KiCad para *ver* y aprobar. Nadie ordena ni sube nada solo:
-  ese botón siempre lo aprietas tú.
+- You will build **the same carrier in two tools at once** to compare them:
+  - **Flux.ai** — cloud EDA with an AI copilot; fast for exploring.
+  - **KiCad stack** — our 6 phases with rigorous validation and fab output.
+- **KiCad is your "source of truth"** (as your brief states), and you archive in **Forgejo**.
+- **KiCad is the editor; Claude is the assistant.** Claude edits the files
+  underneath and you open KiCad to *see* and approve. Nobody orders or uploads
+  anything on its own: you always press that button.
 
 ---
 
-## 1. El mapa: las 6 fases aplicadas a TU carrier
+## 1. The map: the 6 phases applied to YOUR carrier
 
-| Fase | Qué significa para este carrier | Comando / acción | Tú haces |
+| Phase | What it means for this carrier | Command / action | You do |
 |---|---|---|---|
-| **0. Init** | Preparar el proyecto KiCad en `~/repos/firefly-imu-node` | `/pcb-init` (o ya tienes el repo, ver §4) | confirmas constraints |
-| **1. Piezas** | Conseguir U2 (LIS3MDL), Q1 (DMG2305UX/AO3401), J1 (JST-PH), R/C, y la huella del módulo XIAO | `/pcb-source` | apruebas la lista |
-| **2. Esquemático** | Dibujar las conexiones de tu **tabla net-by-net** (brief §5) | "construye el esquemático" | lo revisas en KiCad |
-| **3. Placa** | Colocar y rutear respetando keepout de antena + aislar el magnetómetro | "haz el layout" | guías la colocación |
-| **4. Revisión** | ERC + DRC de fábrica + señal/potencia + EMC (tu checklist brief §10) | `/pcb-review --full` | decides qué arreglar |
-| **5. Fab** | ZIP para JLCPCB/PCBWay (2 capas, ENIG, 0.2 mm) | `/pcb-fab jlcpcb` o `pcbway` | **subes y pagas tú** |
+| **0. Init** | Set up the KiCad project in `~/repos/firefly-imu-node` | `/pcb-init` (or you already have the repo, see §4) | confirm constraints |
+| **1. Parts** | Get U2 (LIS3MDL), Q1 (DMG2305UX/AO3401), J1 (JST-PH), R/C, and the XIAO module footprint | `/pcb-source` | approve the list |
+| **2. Schematic** | Draw the connections from your **net-by-net table** (brief §5) | "build the schematic" | review it in KiCad |
+| **3. Board** | Place and route honoring the antenna keepout + isolating the magnetometer | "do the layout" | guide placement |
+| **4. Review** | ERC + fab DRC + signal/power + EMC (your checklist, brief §10) | `/pcb-review --full` | decide what to fix |
+| **5. Fab** | ZIP for JLCPCB/PCBWay (2 layers, ENIG, 0.2 mm) | `/pcb-fab jlcpcb` or `pcbway` | **upload and pay** |
 
 ---
 
-## 2. Antes de cada sesión (rutina)
+## 2. Before each session (routine)
 
 ```bash
 cd ~/repos/firefly-imu-node
 claude
 ```
 
-Reglas de oro que el stack hace cumplir:
+Golden rules the stack enforces:
 
-1. **Cierra la GUI de KiCad antes de que Claude escriba** el esquemático/placa.
-   (Dos programas tocando el mismo archivo lo corrompen. El stack lo verifica.)
-2. **FreeCAD es al revés:** para la caja 3D, FreeCAD debe estar **abierto** con su
-   "RPC Server" iniciado (ver §7).
-3. **Nunca es "listo para fab"** hasta que pasen *todos* los chequeos y tú lo hayas
-   visto en KiCad. Si no, es "prototipo" — el stack usa esas etiquetas en serio.
-
----
-
-## 3. ⚠️ El tema Flux.ai ⇄ KiCad — léelo antes de invertir el mes
-
-Tu brief dice *"Flux.ai (Copilot) → review/round-trip source of truth in KiCad"*.
-Ahí hay una trampa que conviene conocer:
-
-- **Flux exporta bien lo de fabricación:** Gerbers (RS-274X), taladros (Excellon),
-  BOM, pick-and-place y netlist IPC-D-356. Eso es estándar y lo lee cualquiera.
-- **Pero el "round-trip" Flux → KiCad está flojo:** pasar el *proyecto/esquemático*
-  de Flux a KiCad da resultados rotos según reportes de usuarios. Al revés
-  (KiCad → Flux) sí funciona. Es decir, el round-trip que tu brief asume **no es
-  limpio en la dirección que necesitas.**
-
-### Qué hacer en la práctica (dos caminos, tú comparas)
-
-- **Camino A — KiCad como origen (recomendado para tu "source of truth"):**
-  NO dependas del export de Flux para meter el diseño en KiCad. En su lugar,
-  Claude **re-captura el esquemático directamente en KiCad desde tu tabla
-  net-by-net** (brief §5) — que ya está escrita con el detalle exacto que el stack
-  necesita. Así KiCad es de verdad la fuente de verdad, sin pasar por el puente roto.
-- **Camino B — Flux como origen:** diseñas en Flux con su copiloto (pega el prompt
-  de tu brief §9), y **solo validas lo que Flux exporta bien**: Gerbers contra las
-  reglas de fábrica, y el BOM contra distribuidores. Los chequeos eléctricos
-  fuertes (ERC, topología, señal/potencia, EMC) **no** se pueden correr sobre un
-  export roto, así que ahí el stack te ayuda poco.
-
-> **Conclusión honesta:** para *este* proyecto, el stack te da el máximo valor en el
-> **Camino A**. Flux te da velocidad y un copiloto visual para explorar y para
-> comparar. Trátalos como dos orígenes separados; no asumas que el diseño de Flux
-> entra entero a KiCad para la revisión completa.
+1. **Close the KiCad GUI before Claude writes** the schematic/board.
+   (Two programs touching the same file corrupt it. The stack checks for this.)
+2. **FreeCAD is the opposite:** for the 3D enclosure, FreeCAD must be **open** with
+   its "RPC Server" started (see §7).
+3. **It is never "fab-ready"** until *all* checks pass and you have seen it in
+   KiCad. Otherwise it is a "prototype" — the stack uses those labels seriously.
 
 ---
 
-## 4. Camino A — diseñar en el stack KiCad (paso a paso)
+## 3. ⚠️ The Flux.ai ⇄ KiCad issue — read before investing the month
 
-### Fase 0 — Proyecto
-Tu repo `~/repos/firefly-imu-node` **ya existe** y tiene arranque de KiCad
-(`fp-lib-table`, `sym-lib-table`, `lib/`). Dos opciones:
-- **Si quieres la estructura completa del stack:** dejas que Claude corra
-  `claude-eda init` *dentro* del repo (no borra tus `.kicad_*`) y luego **ajustamos
-  el `.mcp.json` a tu PC** (ver §7 — importante por el tema del Python).
-- **Si prefieres mínimo:** Claude crea el `.kicad_pro/.kicad_sch/.kicad_pcb` con
-  mixelpixx y reusa tus tablas de librerías.
+Your brief says *"Flux.ai (Copilot) → review/round-trip source of truth in KiCad"*.
+There is a trap worth knowing about:
 
-Confirma los constraints del brief §8: **2 capas, FR-4 1.6 mm, 1 oz, 0.2 mm
-trace/space, vías 0.3/0.6 mm, ENIG**, fab JLCPCB o PCBWay.
+- **Flux exports fab data well:** Gerbers (RS-274X), drills (Excellon), BOM,
+  pick-and-place and IPC-D-356 netlist. That is standard and anyone can read it.
+- **But the Flux → KiCad "round-trip" is weak:** moving the *project/schematic*
+  from Flux to KiCad gives broken results according to user reports. The other way
+  around (KiCad → Flux) does work. In other words, the round-trip your brief
+  assumes **is not clean in the direction you need.**
 
-### Fase 1 — Piezas (`/pcb-source`)
-Pídele a Claude sourcing de las **adiciones del carrier** (brief §3), p. ej.:
+### What to do in practice (two paths, you compare)
 
-> *"Busca: LIS3MDL (LGA-12), DMG2305UX y alternativa AO3401 (SOT-23), JST-PH 2.0 mm
-> 2-pin, y los pasivos 0402/0603 (R1 100 k, R2/R3 4.7 k, C1/C2 100 nF, C3 4.7–10 µF).
-> Prioriza piezas básicas de LCSC con stock."*
+- **Path A — KiCad as the source (recommended for your "source of truth"):**
+  Do NOT rely on the Flux export to get the design into KiCad. Instead, Claude
+  **re-captures the schematic directly in KiCad from your net-by-net table**
+  (brief §5) — which is already written with the exact detail the stack needs.
+  That way KiCad is genuinely the source of truth, without crossing the broken bridge.
+- **Path B — Flux as the source:** you design in Flux with its copilot (paste the
+  prompt from brief §9), and **only validate what Flux exports well**: Gerbers
+  against the fab rules, and the BOM against distributors. The strong electrical
+  checks (ERC, topology, signal/power, EMC) **cannot** be run on a broken export,
+  so the stack helps little there.
 
-Para el **módulo XIAO nRF52840 Sense Plus (U1)**: no es una pieza de catálogo
-normal, va como **módulo SMD** con la **land pattern oficial de Seeed**
-(castellated + pads traseros). Pídele a Claude que busque esa huella o la prepare;
-confírmala contra la referencia de Seeed (brief §10, primer check).
-
-Apruebas la tabla (MPN, precio, stock, datasheet) antes de seguir.
-
-### Fase 2 — Esquemático
-> *"Construye el esquemático desde la tabla net-by-net del brief (sección 5)."*
-
-Claude coloca U1, U2, Q1, J1, R/C y conecta exactamente:
-`3V3`, `GND`, `BAT`, `VBAT_CONN`, `I2C_SDA`, `I2C_SCL`, `MAG_INT`, y los amarres
-`U2.CS→VDD_IO`, `U2.SA1→GND` (dirección 0x1C). Luego verifica la topología.
-**Abre KiCad y revisa** que U2 cuelgue del 3V3 del XIAO (no del BAT) y que Q1 esté
-como en el brief §6 (S→BAT, D→J1+, G→GND).
-
-### Fase 3 — Placa (layout)
-Tú guías la colocación con tus constraints (brief §7), díselo así:
-
-> *"Coloca el XIAO con su borde de antena hacia el borde de la placa, sin cobre ni
-> plano debajo de la antena. Pon el LIS3MDL en la esquina más lejana de la antena,
-> del conector de batería y de las pistas de carga. C1/C2 a menos de 2 mm de U2.
-> I2C corto y directo. Dos agujeros M2."*
-
-El **keepout de antena** y la **aislación del magnetómetro** son lo más importante
-aquí — un mag cerca de corriente DC lee mal el rumbo.
-
-### Fase 4 — Revisión (`/pcb-review --full`)
-Corre todos los analizadores y te da un reporte por severidad. Mapea tu
-checklist del brief §10:
-- **ERC** (mixelpixx) — nets flotantes, energía cruzada.
-- **DRC de fábrica** (kicad-happy/jlcpcb o pcbway) — 0.2 mm trace, vías, ENIG.
-- **Señal/potencia** (Seeed) — planos de tierra, decoupling, caminos de corriente.
-- **EMC** (kicad-happy/emc) — desacoplo, ruteo, bordes.
-- Cierra cada casilla de tu §10 (huella Seeed, mapeo I2C D4/D5, pad BAT, ajuste de
-  carga BQ25101, umbral de Q1, circuito de aplicación del LIS3MDL).
-
-### Fase 5 — Fab (`/pcb-fab`)
-Genera el paquete (Gerbers + taladros + BOM + posiciones + DRC de fábrica) en un
-ZIP. **Tú** entras al portal de JLCPCB/PCBWay, subes y pagas. El stack **no** sube
-nada. Archiva el resultado en **Forgejo** como tu fuente de verdad.
+> **Honest conclusion:** for *this* project, the stack gives you the most value on
+> **Path A**. Flux gives you speed and a visual copilot for exploring and comparing.
+> Treat them as two separate sources; do not assume the Flux design enters KiCad
+> whole for the full review.
 
 ---
 
-## 5. Camino B — diseñar en Flux.ai (paso a paso)
+## 4. Path A — designing in the KiCad stack (step by step)
 
-1. En Flux, crea el proyecto y pega el **prompt listo** de tu brief §9 en el copiloto.
-2. Itera visualmente (el copiloto coloca y rutea; tú corriges).
-3. Exporta el paquete de fabricación (Gerbers, taladros, BOM, pick-and-place).
-4. **Validación parcial con el stack:**
-   - Gerbers → pásalos por las reglas de fábrica (JLCPCB/PCBWay).
-   - BOM → compáralo contra distribuidores (pcbparts / @jlcpcb/mcp).
-   - *(Recuerda §3: los chequeos eléctricos completos no aplican sobre el export.)*
+### Phase 0 — Project
+Your repo `~/repos/firefly-imu-node` **already exists** and has a KiCad bootstrap
+(`fp-lib-table`, `sym-lib-table`, `lib/`). Two options:
+- **If you want the full stack structure:** let Claude run `claude-eda init`
+  *inside* the repo (it does not delete your `.kicad_*`) and then **adjust the
+  `.mcp.json` for your machine** (see §7 — important because of the Python issue).
+- **If you prefer minimal:** Claude creates the `.kicad_pro/.kicad_sch/.kicad_pcb`
+  with mixelpixx and reuses your library tables.
+
+Confirm the constraints from brief §8: **2 layers, FR-4 1.6 mm, 1 oz, 0.2 mm
+trace/space, 0.3/0.6 mm vias, ENIG**, fab JLCPCB or PCBWay.
+
+### Phase 1 — Parts (`/pcb-source`)
+Ask Claude to source the **carrier additions** (brief §3), e.g.:
+
+> *"Find: LIS3MDL (LGA-12), DMG2305UX and the AO3401 alternative (SOT-23), JST-PH
+> 2.0 mm 2-pin, and the 0402/0603 passives (R1 100 k, R2/R3 4.7 k, C1/C2 100 nF,
+> C3 4.7–10 µF). Prioritize LCSC basic parts in stock."*
+
+For the **XIAO nRF52840 Sense Plus module (U1)**: it is not a normal catalog part,
+it goes in as an **SMD module** with the **official Seeed land pattern** (castellated
++ back pads). Ask Claude to find or prepare that footprint; confirm it against the
+Seeed reference (brief §10, first check).
+
+You approve the table (MPN, price, stock, datasheet) before continuing.
+
+### Phase 2 — Schematic
+> *"Build the schematic from the net-by-net table in the brief (section 5)."*
+
+Claude places U1, U2, Q1, J1, R/C and connects exactly:
+`3V3`, `GND`, `BAT`, `VBAT_CONN`, `I2C_SDA`, `I2C_SCL`, `MAG_INT`, plus the ties
+`U2.CS→VDD_IO`, `U2.SA1→GND` (address 0x1C). Then it verifies the topology.
+**Open KiCad and check** that U2 hangs off the XIAO's 3V3 (not BAT) and that Q1 is
+as in brief §6 (S→BAT, D→J1+, G→GND).
+
+### Phase 3 — Board (layout)
+You guide placement with your constraints (brief §7); tell it like this:
+
+> *"Place the XIAO with its antenna edge toward the board edge, with no copper or
+> plane under the antenna. Put the LIS3MDL in the corner farthest from the antenna,
+> the battery connector and the charge traces. C1/C2 within 2 mm of U2. Short,
+> direct I2C. Two M2 holes."*
+
+The **antenna keepout** and the **magnetometer isolation** are the most important
+things here — a mag near DC current reads heading wrong.
+
+### Phase 4 — Review (`/pcb-review --full`)
+Runs all analyzers and gives you a report by severity. Map it to your checklist in
+brief §10:
+- **ERC** (mixelpixx) — floating nets, crossed power.
+- **Fab DRC** (kicad-happy/jlcpcb or pcbway) — 0.2 mm trace, vias, ENIG.
+- **Signal/power** (Seeed) — ground planes, decoupling, current paths.
+- **EMC** (kicad-happy/emc) — decoupling, routing, edges.
+- Close every box in your §10 (Seeed footprint, I2C D4/D5 mapping, BAT pad,
+  BQ25101 charge setting, Q1 threshold, LIS3MDL application circuit).
+
+### Phase 5 — Fab (`/pcb-fab`)
+Generates the package (Gerbers + drills + BOM + positions + fab DRC) as a ZIP.
+**You** go to the JLCPCB/PCBWay portal, upload and pay. The stack does **not**
+upload anything. Archive the result in **Forgejo** as your source of truth.
 
 ---
 
-## 6. Cómo comparar los dos (tu objetivo del mes)
+## 5. Path B — designing in Flux.ai (step by step)
 
-Lleva una tablita simple y rellénala al final:
+1. In Flux, create the project and paste the **ready prompt** from brief §9 into the copilot.
+2. Iterate visually (the copilot places and routes; you correct).
+3. Export the fab package (Gerbers, drills, BOM, pick-and-place).
+4. **Partial validation with the stack:**
+   - Gerbers → run them through the fab rules (JLCPCB/PCBWay).
+   - BOM → compare against distributors (pcbparts / @jlcpcb/mcp).
+   - *(Remember §3: the full electrical checks do not apply to the export.)*
 
-| Criterio | Flux.ai | Stack KiCad |
+---
+
+## 6. How to compare the two (your goal for the month)
+
+Keep a simple table and fill it in at the end:
+
+| Criterion | Flux.ai | KiCad stack |
 |---|---|---|
-| Velocidad para el primer esquemático | | |
-| Calidad/control del ruteo | | |
-| Qué tan bien respeta keepout de antena + aislación del mag | | |
-| Profundidad de validación (ERC/DRC/SI-PI/EMC) | | |
-| Esfuerzo para llegar a Gerbers correctos | | |
-| Costo final del lote y claridad del BOM | | |
-| ¿Lo volverías a usar? | | |
+| Speed to first schematic | | |
+| Routing quality/control | | |
+| How well it honors antenna keepout + mag isolation | | |
+| Validation depth (ERC/DRC/SI-PI/EMC) | | |
+| Effort to reach correct Gerbers | | |
+| Final batch cost and BOM clarity | | |
+| Would you use it again? | | |
 
-Mismo brief, dos caminos → decides con datos, no por impresión.
+Same brief, two paths → you decide with data, not impressions.
 
 ---
 
-## 7. Apéndice: configuración específica de TU PC
+## 7. Appendix: configuration specific to YOUR machine
 
-Tu máquina es **Fedora Asahi (aarch64), KiCad 10.0.3**. Hay un detalle clave:
-tu `python3` por defecto es el de **PlatformIO** (sin `pcbnew`), y `pcbnew` solo se
-importa desde `/usr/bin/python3.14`. Por eso el `.mcp.json` del proyecto debe
-apuntar a los intérpretes correctos. Este es el bloque que debe quedar:
+Your machine is **Fedora Asahi (aarch64), KiCad 10.0.3**. There is a key detail:
+your default `python3` is the **PlatformIO** one (without `pcbnew`), and `pcbnew`
+only imports from `/usr/bin/python3.14`. That is why the project `.mcp.json` must
+point at the correct interpreters. This is the block it should end up with:
 
 ```json
 {
@@ -210,48 +210,47 @@ apuntar a los intérpretes correctos. Este es el bloque que debe quedar:
 }
 ```
 
-Notas:
-- **mixelpixx** necesita `KICAD_PYTHON=/usr/bin/python3.14` para hallar `pcbnew`
-  (si no, agarra el Python de PlatformIO y falla).
-- **seeed** corre desde su venv aislado `~/.venvs/seeed/bin/python` (ve `pcbnew`,
-  tiene `fastmcp` + el server). El bare `python3` daría modo básico (sin señal/pot.).
-- **pcbparts** es HTTP en la nube — no se instala, no necesita API key para JLCPCB.
-- **freecad** (cajas 3D, opcional): además de esto, abre FreeCAD → workbench
-  **"MCP Addon"** → **"Start RPC Server"**. El addon ya está copiado en el sandbox
-  de Flatpak. Sin ese paso manual, el server de FreeCAD no conecta.
+Notes:
+- **mixelpixx** needs `KICAD_PYTHON=/usr/bin/python3.14` to find `pcbnew`
+  (otherwise it grabs the PlatformIO Python and fails).
+- **seeed** runs from its isolated venv `~/.venvs/seeed/bin/python` (it sees
+  `pcbnew`, has `fastmcp` + the server). Bare `python3` would give basic mode (no signal/power).
+- **pcbparts** is HTTP in the cloud — no install, no API key for JLCPCB.
+- **freecad** (3D enclosures, optional): in addition to this, open FreeCAD → workbench
+  **"MCP Addon"** → **"Start RPC Server"**. The addon is already copied into the Flatpak
+  sandbox. Without that manual step, the FreeCAD server does not connect.
 
-Estado de la instalación del stack en esta PC: KiCad 10.0.3 ✓, uv/bun ✓,
+Stack install status on this machine: KiCad 10.0.3 ✓, uv/bun ✓,
 claude-eda ✓, mixelpixx ✓, Seeed ✓, ngspice 46 ✓, FreeCAD 1.1.1 + addon ✓.
 
 ---
 
-## 8. Glosario mínimo (PCB para nuevos)
+## 8. Minimal glossary (PCB for newcomers)
 
-- **Esquemático** — el "diagrama" de qué se conecta con qué (las nets).
-- **Net** — un cable lógico (p. ej. `3V3`, `GND`, `I2C_SDA`).
-- **Footprint / huella** — la marca física donde se suelda una pieza en la placa.
-- **Layout / ruteo** — colocar las huellas y dibujar las pistas de cobre.
-- **ERC** — chequeo eléctrico (pines sueltos, energía cruzada).
-- **DRC** — chequeo de fabricación (ancho de pista, taladros, distancias).
-- **Gerber** — los "planos" de cada capa que entiende la fábrica.
-- **BOM** — lista de materiales (qué piezas y cuántas).
-- **Pick-and-place / CPL / centroid** — dónde y con qué rotación va cada pieza (para
-  ensamblaje automático).
-- **Stackup** — cómo se apilan las capas (aquí: 2 capas, FR-4 1.6 mm, 1 oz).
-- **ENIG / HASL** — acabados del cobre; ENIG es más fino y limpio (mejor para el
-  LGA-12 del LIS3MDL).
-- **Keepout** — zona donde *no* debe haber cobre (aquí: bajo la antena del XIAO).
-- **Pour / plano** — relleno de cobre (típicamente GND).
-- **Via** — agujero metalizado que conecta capas.
+- **Schematic** — the "diagram" of what connects to what (the nets).
+- **Net** — a logical wire (e.g. `3V3`, `GND`, `I2C_SDA`).
+- **Footprint** — the physical pattern where a part is soldered on the board.
+- **Layout / routing** — placing the footprints and drawing the copper traces.
+- **ERC** — electrical check (dangling pins, crossed power).
+- **DRC** — fabrication check (trace width, drills, clearances).
+- **Gerber** — the "drawings" of each layer that the fab understands.
+- **BOM** — bill of materials (which parts and how many).
+- **Pick-and-place / CPL / centroid** — where and at what rotation each part goes (for
+  automated assembly).
+- **Stackup** — how the layers stack (here: 2 layers, FR-4 1.6 mm, 1 oz).
+- **ENIG / HASL** — copper finishes; ENIG is finer and cleaner (better for the
+  LIS3MDL's LGA-12).
+- **Keepout** — a zone where there must be *no* copper (here: under the XIAO antenna).
+- **Pour / plane** — a copper fill (typically GND).
+- **Via** — a plated hole connecting layers.
 
 ---
 
-## 9. Reglas de seguridad (no negociables)
+## 9. Safety rules (non-negotiable)
 
-1. **GUI de KiCad cerrada** antes de que Claude escriba (FreeCAD, abierto, al revés).
-2. **Nunca "fab-ready"** sin: ERC ok, DRC de fábrica ok, señal/EMC sin bloqueos, y tu
-   visto bueno visual en KiCad. Si falta algo, es "prototipo".
-3. **Nadie ordena ni sube** por ti. El stack genera el ZIP; tú lo subes al portal.
-4. **Datasheets:** si una afirmación eléctrica no está respaldada por el datasheet
-   cacheado, el stack dirá "solo consistencia", no "verificado". Créelo.
-```
+1. **KiCad GUI closed** before Claude writes (FreeCAD, open, is the opposite).
+2. **Never "fab-ready"** without: ERC ok, fab DRC ok, signal/EMC with no blockers, and your
+   visual sign-off in KiCad. If anything is missing, it is a "prototype".
+3. **Nobody orders or uploads** for you. The stack generates the ZIP; you upload it to the portal.
+4. **Datasheets:** if an electrical claim is not backed by the cached datasheet,
+   the stack will say "consistency only", not "verified". Believe it.
